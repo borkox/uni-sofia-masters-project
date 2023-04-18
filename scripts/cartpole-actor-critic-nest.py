@@ -10,9 +10,12 @@ import nest.voltage_trace
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+np.set_printoptions(precision=3)
 seed = np.random.randint(0, 1000000)
 nest.SetKernelStatus({'rng_seed': seed})
 
+SOLVED_HISTORY_SCORES_LEN = 10
 # discount factor for future utilities
 GAMA = 0.8
 # number of episodes to run
@@ -162,7 +165,7 @@ print(f"Action space: {env.action_space.n}")
 scores = []
 
 # track recent scores
-recent_scores = deque(maxlen=100)
+recent_scores = deque(maxlen=SOLVED_HISTORY_SCORES_LEN)
 prev_spikes = 0
 # run episodes
 for episode in range(NUM_EPISODES):
