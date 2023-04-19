@@ -17,16 +17,17 @@ nest.SetKernelStatus({'rng_seed': seed})
 
 SOLVED_HISTORY_SCORES_LEN = 10
 # discount factor for future utilities
-GAMA = 0.8
+GAMA = 0.98
 # number of episodes to run
-NUM_EPISODES = 500
+NUM_EPISODES = 100
 # max steps per episode
 MAX_STEPS = 10000
 # score agent needs for environment to be solved
 SOLVED_SCORE = 195
 # device to run model on
 time = 0
-STEP = 40
+STEP = 50
+LEARN_TIME = 10
 REST_TIME = 50
 scaler = scp.MinMaxScaler(feature_range=(0.01, 1), copy=True, clip=True)
 # See https://www.gymlibrary.dev/environments/classic_control/cart_pole/#observation-space
@@ -52,10 +53,10 @@ spike_recorder_POLICY = nest.Create('spike_recorder')
 spike_recorder_SNc = nest.Create('spike_recorder')
 nest.CopyModel('stdp_dopamine_synapse', 'dopsyn', \
                {'vt': SNc_vt.get('global_id'), \
-                'A_plus': 0.01, 'A_minus': 0.01, \
-                'Wmin': -3000.0, 'Wmax': 3000.0,
-                'tau_c': 3 * (STEP + REST_TIME),
-                'tau_n': 2 * (STEP + REST_TIME),
+                'A_plus': 0.01, 'A_minus': 0., \
+                'Wmin': -300.0, 'Wmax': 300.0,
+                'tau_c': 1 * (STEP + LEARN_TIME+ REST_TIME),
+                'tau_n': 5,
                 'tau_plus': 20.0})
 
 nest.Connect(dc_generator_env, STATE,
@@ -211,16 +212,12 @@ for episode in range(NUM_EPISODES):
         env.render()
         nest.Simulate(STEP)
 
-        # REST for some time
-        nest.SetStatus(dc_generator_env, {"amplitude": 0})
-        nest.Simulate(REST_TIME)
 
         left_spikes = len([e for e in nest.GetStatus(spike_recorder_l, keys='events')[0]['times'] if
                            e > time])  # calc the "firerate" of each actor population
         right_spikes = len([e for e in nest.GetStatus(spike_recorder_r, keys='events')[0]['times'] if
                             e > time])  # calc the "firerate" of each actor population
         time += STEP
-        time += REST_TIME
         print("actor spikes2:", left_spikes, right_spikes, " at step ", step)
 
         action = 0 if left_spikes > right_spikes else 1
@@ -229,20 +226,36 @@ for episode in range(NUM_EPISODES):
 
         new_state, reward, done, _ = env.step(action)
 
-        if done:
-            for i in range(0, 5):
-                step = step + 1
-                nest.SetStatus(dc_generator_reward, {"amplitude": 0.})
-                nest.Simulate(STEP + REST_TIME)
-                time += STEP + REST_TIME
+        # learn time
+        if reward > 0 or not done:
+            print("Learn time")
+            # Enable learning
+            nest.SetStatus(SNc, {'I_e': 10.})
+            nest.Simulate(LEARN_TIME)
+            time += LEARN_TIME
+            # Supress learning
+            nest.SetStatus(SNc, {'I_e': -1000.})
+        else:
+            nest.SetStatus(SNc, {'I_e': -1000.})
+            nest.Simulate(LEARN_TIME)
+            time += LEARN_TIME
+            print("No learn on this step.")
 
         #     print("reward:", reward)
+
+        # REST for some time
+        nest.SetStatus(dc_generator_env, {"amplitude": 0})
+        nest.Simulate(REST_TIME)
+        time += REST_TIME
 
         # update episode score
         score += reward
 
+
         # if terminal state, next state val is 0
         if done:
+            nest.Simulate(2 * REST_TIME)
+            time += 2 * REST_TIME
             print(f"Episode {episode} finished after {step} timesteps")
             break
 
