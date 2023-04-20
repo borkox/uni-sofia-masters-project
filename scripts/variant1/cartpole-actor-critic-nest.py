@@ -9,8 +9,9 @@ import nest
 import nest.voltage_trace
 import matplotlib.pyplot as plt
 import numpy as np
+import os, sys, getopt, glob
 
-
+output_folder='outputs'
 np.set_printoptions(precision=3)
 seed = np.random.randint(0, 1000000)
 nest.SetKernelStatus({'rng_seed': seed})
@@ -130,15 +131,6 @@ seed = np.random.randint(0, 1000000)
 nest.SetKernelStatus({'rng_seed': seed})
 
 
-# =============================================================
-
-# nest.Connect(action_left+action_right, V, \
-#              conn_spec={'rule': 'pairwise_bernoulli', 'p': 0.5},
-#              syn_spec={
-#                  "weight": 20, "delay": STEP + REST_TIME + 1.})
-
-
-# ================================================
 def transform_state(s):
     transformed = np.array([
         abs(s[0]) if s[0] > 0 else 0,
@@ -197,7 +189,6 @@ for episode in range(NUM_EPISODES):
         # print("New reward : ", new_reward)
         amplitude_I_reward = new_reward
         #     print("Setting amplitude for reward: ", amplitude_I_reward, "     step: ", step)
-        # nest.SetStatus(dc_generator_reward, {"amplitude": amplitude_I_reward, "start": time, "stop": time + 25})
         nest.SetStatus(dc_generator_reward, {"amplitude": amplitude_I_reward})
 
         # ENVIRONMENT
@@ -286,13 +277,20 @@ print(nest.GetConnections(STATE, V))
 print("====== STATE === POLICY ===")
 print(nest.GetConnections(STATE, POLICY))
 
-nest.raster_plot.from_device(spike_recorder_STATE, hist=True, title="STATE")
-plt.show()
-nest.raster_plot.from_device(spike_recorder_V, hist=True, title="V")
-plt.show()
-nest.raster_plot.from_device(spike_recorder_POLICY, hist=True, title="POLICY")
-plt.show()
-nest.raster_plot.from_device(spike_recorder_SNc, hist=True, title="SNc")
-plt.show()
-nest.raster_plot.from_device(spike_recorder_both, hist=True, title="ACTIONS")
-plt.show()
+nest.raster_plot.from_device(spike_recorder_STATE, hist=True, title="Състояние (STATE)")
+plt.savefig(f'{output_folder}/STATE.png', format='png')
+
+nest.raster_plot.from_device(spike_recorder_V, hist=True, title="Функция-стойност (V)")
+plt.savefig(f'{output_folder}/V.png', format='png')
+
+nest.raster_plot.from_device(spike_recorder_POLICY, hist=True, title="Политика (POLICY)")
+plt.savefig(f'{output_folder}/POLICY.png', format='png')
+
+nest.raster_plot.from_device(spike_recorder_SNc, hist=True, title="Допаминово звено (SNc)")
+plt.savefig(f'{output_folder}/SNc.png', format='png')
+
+nest.raster_plot.from_device(spike_recorder_both, hist=True, title="Действия (ACTIONS)")
+plt.savefig(f'{output_folder}/ACTIONS.png', format='png')
+
+# Print scores
+os.system(f"python ./plot_scores.py -i {output_folder}/scores.txt -o {output_folder}/final_scores.png")
