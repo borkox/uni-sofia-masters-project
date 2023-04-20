@@ -1,3 +1,4 @@
+import math
 import os, sys, getopt, glob
 import gym
 from collections import deque
@@ -6,6 +7,7 @@ import numpy as np
 from gym.envs.toy_text import FrozenLakeEnv
 from pathlib import Path
 import sklearn.preprocessing as scp
+
 
 np.set_printoptions(precision=3)
 clean_output = True
@@ -54,7 +56,7 @@ if clean_output:
     [f.unlink() for f in Path(output_folder).glob("*") if f.is_file()]
 
 # GAMMA for Sarsa TD(0)
-GAMMA = 1.0
+GAMMA = 0.95
 # number of episodes to run
 NUM_EPISODES = max_number_episodes
 # max steps per episode
@@ -67,7 +69,7 @@ SOLVED_MEAN_SCORE = 195
 # current time while it runs
 current_time = 0
 # STEP is milliseconds to wait WTA to become functional
-STEP = 150
+STEP = 120
 # Learn time is when WTA is still active and dopamine is activated
 LEARN_TIME = 20
 # REST_TIME is milliseconds to run rest for WTA and perform dopamine STDP
@@ -80,6 +82,7 @@ CRITIC_NOISE_RATE = 65500.
 REWARD_STIMULUS_RATE = 65000.
 STIMULUS_RATE = 65000.
 WTA_NOISE_RATE = 500.
+INPUT_TRANSFORMED_DIM = 8
 
 # ================================================
 nest.set_verbosity("M_WARNING")
@@ -97,7 +100,8 @@ possible_actions_str = ["LEFT", "RIGHT"]
 NUM_STATE_NEURONS = 20
 NUM_WTA_NEURONS = 50
 # WEIGHT_SCALING = 100 / NUM_STATE_NEURONS
-REWARD_SCALING = 5 * 20 / NUM_STATE_NEURONS
+REWARD_SCALING = 2.5 * 20 / NUM_STATE_NEURONS
+DA_NEURONS = 150
 
 rank = nest.Rank()
 size = nest.NumProcesses()
@@ -111,7 +115,7 @@ nest.SetDefaults("iaf_psc_alpha", {"tau_minus": tau_pre})
 # Create states
 states = []
 all_states = None
-for i in range(8):
+for i in range(INPUT_TRANSFORMED_DIM):
     state_group = nest.Create('iaf_psc_alpha', NUM_STATE_NEURONS)
     states.append(state_group)
     if all_states is None:
@@ -159,7 +163,7 @@ nest.Connect(stimulus, all_states, 'all_to_all', {'weight': 0.})
 # Here, we are implementing the dopaminergic nueron pool, volume transmitter and dopamin-modulated synapse between states and actions
 
 # Create DA pool
-DA_neurons = nest.Create('iaf_psc_alpha', 100)
+DA_neurons = nest.Create('iaf_psc_alpha', DA_NEURONS)
 # vol_trans = nest.Create('volume_transmitter', 1, {'deliver_interval': 10})
 vol_trans = nest.Create('volume_transmitter', 1)
 nest.Connect(DA_neurons, vol_trans, 'all_to_all')
@@ -168,23 +172,19 @@ nest.Connect(DA_neurons, vol_trans, 'all_to_all')
 reward_stimulus = nest.Create('poisson_generator', 1, {'rate': REWARD_STIMULUS_RATE})
 nest.Connect(reward_stimulus, DA_neurons, 'all_to_all', {'weight': 0.})
 
-tau_c = 50.0
-tau_n = 20.0
+tau_c = 200.0  # Time constant of eligibility trace
+tau_n = 5.0  # Time constant of dopaminergic trace
 tau_plus = 20.
 
 # Connect states to actions
 nest.CopyModel('stdp_dopamine_synapse', 'dopa_synapse', {
-    'vt': vol_trans.get('global_id'), 'A_plus': 1, 'A_minus': .5, "tau_plus": tau_plus,
+    'vt': vol_trans.get('global_id'), 'A_plus': 0.05, 'A_minus': 0.05, "tau_plus": tau_plus,
     'Wmin': -10., 'Wmax': 10., 'b': 0., 'tau_n': tau_n, 'tau_c': tau_c})
 
 nest.Connect(all_states, all_actions, 'all_to_all', {'synapse_model': 'dopa_synapse', 'weight': 0.0})
 
-nest.CopyModel('stdp_dopamine_synapse', 'dopa_synapse_critic', {
-    'vt': vol_trans.get('global_id'), 'A_plus': 1, 'A_minus': .5, "tau_plus": tau_plus,
-    'Wmin': -10., 'Wmax': 10., 'b': 0., 'tau_n': tau_n, 'tau_c': tau_c})
-
 critic = nest.Create('iaf_psc_alpha', 50)
-nest.Connect(all_states, critic, 'all_to_all', {'synapse_model': 'dopa_synapse_critic', 'weight': 0.0})
+nest.Connect(all_states, critic, 'all_to_all', {'synapse_model': 'dopa_synapse', 'weight': 0.0})
 nest.Connect(critic, DA_neurons, 'all_to_all', {'weight': -200., 'delay': STEP+LEARN_TIME+REST_TIME})
 nest.Connect(critic, DA_neurons, 'all_to_all', {'weight': GAMMA * 200., 'delay': 1.})
 
@@ -215,7 +215,7 @@ nest.Connect(noise, DA_neurons, 'all_to_all', {'weight': NOISE_DA_NEURONS_WEIGHT
 print(f"Observation space: {env.observation_space}")
 print(f"Action space: {env.action_space.n}")
 
-scaler = scp.MinMaxScaler(feature_range=(0.3, 0.6), copy=True, clip=True)
+scaler = scp.MinMaxScaler(feature_range=(0.1, 1), copy=True, clip=True)
 # See https://www.gymlibrary.dev/environments/classic_control/cart_pole/#observation-space
 scaler.fit([[0, 0, 0, 0, 0, 0, 0, 0], [+1.5, +1.5, +1.5, +1.5, +0.13, +0.13, +2.1, +2.1]])
 
@@ -267,8 +267,8 @@ for episode in range(NUM_EPISODES):
         nest.SetStatus(DA_neurons, {'I_e': -1000.})
 
         # Apply environment state as weights from "stimulus" to "states[i]"
-        state_tr = transform_state(state) # Dim 8
-        for i in range(8):
+        state_tr = transform_state(state)
+        for i in range(INPUT_TRANSFORMED_DIM):
             nest.SetStatus(nest.GetConnections(stimulus, states[i]), {'weight': state_tr[i]})
         nest.SetStatus(wta_noise, {'rate': 3000.})
 
@@ -297,6 +297,7 @@ for episode in range(NUM_EPISODES):
         nest.SetStatus(nest.GetConnections(stimulus, all_states), {'weight': 0.})
 
         # apply reward
+        reward = max(10 * math.cos(17 * new_state[2]), 0)
         print("Scaled reward:", float(reward) * REWARD_SCALING)
         nest.SetStatus(nest.GetConnections(reward_stimulus, DA_neurons), {'weight': float(reward) * REWARD_SCALING})
 
