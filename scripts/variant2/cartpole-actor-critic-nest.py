@@ -18,7 +18,7 @@ opts, args = getopt.getopt(sys.argv[1:],"ho:c:n:v")
 print (f"Script {sys.argv[0]} started with options: ", opts)
 for opt, arg in opts:
     if opt in ("-h", "--help"):
-        print ('USAGE:> cartpole-actor-critic-nest2.py OPTIONS')
+        print ('USAGE:> cartpole-actor-critic-nest.py OPTIONS')
         print ('OPTIONS: ')
         print ('   -o <output>')
         print ('       where <output> is output folder, default "./output"')
