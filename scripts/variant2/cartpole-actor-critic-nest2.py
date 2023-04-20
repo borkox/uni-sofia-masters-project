@@ -179,7 +179,7 @@ tau_plus = 20.
 # Connect states to actions
 nest.CopyModel('stdp_dopamine_synapse', 'dopa_synapse', {
     'vt': vol_trans.get('global_id'), 'A_plus': 0.05, 'A_minus': 0.05, "tau_plus": tau_plus,
-    'Wmin': -10., 'Wmax': 10., 'b': 0., 'tau_n': tau_n, 'tau_c': tau_c})
+    'Wmin': -100., 'Wmax': 100., 'b': 0., 'tau_n': tau_n, 'tau_c': tau_c})
 
 nest.Connect(all_states, all_actions, 'all_to_all', {'synapse_model': 'dopa_synapse', 'weight': 0.0})
 
