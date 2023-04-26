@@ -64,12 +64,12 @@ MAX_STEPS = 500
 # Saves scores to file evey SAVE_SCORES_STEPS steps
 SAVE_SCORES_STEPS = 5
 # score agent needs for environment to be solved
-SOLVED_HISTORY_SCORES_LEN = 10
+SOLVED_HISTORY_SCORES_LEN = 100
 SOLVED_MEAN_SCORE = 195
 # current time while it runs
 current_time = 0
 # STEP is milliseconds to wait WTA to become functional
-STEP = 120
+STEP = 50
 # Learn time is when WTA is still active and dopamine is activated
 LEARN_TIME = 20
 # REST_TIME is milliseconds to run rest for WTA and perform dopamine STDP
@@ -101,7 +101,7 @@ CRITIC_NUM_NEURONS = 50
 NUM_STATE_NEURONS = 8
 NUM_WTA_NEURONS = 20
 # WEIGHT_SCALING = 100 / NUM_STATE_NEURONS
-REWARD_SCALING = 2.5 * 20 / NUM_STATE_NEURONS
+REWARD_SCALING = 6.25
 DA_NEURONS = 50
 
 rank = nest.Rank()
@@ -179,7 +179,7 @@ tau_plus = 20.
 
 # Connect states to actions
 nest.CopyModel('stdp_dopamine_synapse', 'dopa_synapse', {
-    'vt': vol_trans.get('global_id'), 'A_plus': 0.004, 'A_minus': 0.0028, "tau_plus": tau_plus,
+    'vt': vol_trans.get('global_id'), 'A_plus': 0.004, 'A_minus': 0.0, "tau_plus": tau_plus,
     'Wmin': -1000., 'Wmax': 1000., 'b': 0., 'tau_n': tau_n, 'tau_c': tau_c})
 
 nest.Connect(all_states, all_actions,
@@ -220,7 +220,7 @@ nest.Connect(noise, DA_neurons, 'all_to_all', {'weight': NOISE_DA_NEURONS_WEIGHT
 print(f"Observation space: {env.observation_space}")
 print(f"Action space: {env.action_space.n}")
 
-scaler = scp.MinMaxScaler(feature_range=(0.3, 1.5), copy=True, clip=True)
+scaler = scp.MinMaxScaler(feature_range=(0.2, 1.5), copy=True, clip=True)
 # See https://www.gymlibrary.dev/environments/classic_control/cart_pole/#observation-space
 scaler.fit([[0, 0, 0, 0, 0, 0, 0, 0], [+1.5, +1.5, +1.5, +1.5, +0.13, +0.13, +2.1, +2.1]])
 
@@ -346,7 +346,7 @@ for episode in range(NUM_EPISODES):
 
     # early stopping if we meet solved score goal
     if np.array(recent_scores).mean() >= SOLVED_MEAN_SCORE \
-            and reward > SOLVED_MEAN_SCORE: # We want spikes to be snapshot when actually episode is solved
+            and score > SOLVED_MEAN_SCORE: # We want spikes to be snapshot when actually episode is solved
         print("SOLVED")
         break
     else:
