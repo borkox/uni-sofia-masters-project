@@ -81,7 +81,7 @@ looks at the input through the prism of its own intrinsic dynamics[3].
 Neurons can transmit electrical signals over long distances.
 
 <div style="text-align: center;">
-<img src="doc/izikevich_in_vitro_spike.png" width="50%"> <br>
+<img src="doc/izikevich_in_vitro_spike.png" > <br>
 <i>Two interconnected cortical pyramidal neurons (hand drawing) and in vitro
 recorded spike. Copied from Izhikevich [3]</i>
 </div>
@@ -120,12 +120,12 @@ Running the simulator can give you recordings of virtual devices pluggen
 inside your artificial neurons.
 
 <div style="text-align: center;">
-<img src="doc/vm_one_neuron.pdf.png" width="50%"> <br>
+<img src="doc/vm_one_neuron.pdf.png" > <br>
 <i>Membrane potential of integrate-and-fire neuron with constant input current</i>
 </div>
 
 <div style="text-align: center;">
-<img src="doc/spikes_one_neuron.pdf.png" width="50%"> <br>
+<img src="doc/spikes_one_neuron.pdf.png" > <br>
 <i>Spikes of the neuron.</i>
 </div>
 
@@ -144,7 +144,7 @@ represent a neuron's firing rate, the average number of spikes per some unit of 
 
 
 <div style="text-align: center;">
-<img src="doc/barto_sutton_actor_critic_dopamine.png" width="50%"> <br>
+<img src="doc/barto_sutton_actor_critic_dopamine.png" > <br>
 <i>Actor-critic ANN and a hypothetical neural implementation.Copied from [1]</i>
 </div>
 
@@ -165,7 +165,7 @@ the line labeled `TD error δ' extending across all of the connections in the cr
 actor networks [1].
 
 <div style="text-align: center;">
-<img src="doc/actor-critic-delta-error.png" width="50%"> <br>
+<img src="doc/actor-critic-delta-error.png" > <br>
 <i>Basic structure for actor-critic involving temporal difference error.Copied from [2]</i>
 </div>
 
@@ -177,7 +177,7 @@ Implementation network is described on the next figure.
 Learning is done through Spike-timing-dependent plasticity (STDP).
 
 <div style="text-align: center;">
-<img src="doc/variant2_snn_architecture_en.drawio.png" width="50%"> <br>
+<img src="doc/variant2_snn_architecture_en.drawio.png" > <br>
 <i>Variant 2 implementation.</i>
 </div>
 
@@ -186,29 +186,29 @@ Learning is done through Spike-timing-dependent plasticity (STDP).
 Simulations of variant 2 which is considered to solve the Cartpole problem can be seen on the next figures.
 
 <div style="text-align: center;">
-<img src="scripts/variant2/outputs/final_scores.png" width="50%"> <br>
+<img src="scripts/variant2/outputs/final_scores.png" > <br>
 <i>Variant 2 solution.</i>
 </div>
 
 Spikes from the last episode are given below:
 
 <div style="text-align: center;">
-<img src="scripts/variant2/outputs/sd_critic.png" width="50%"> <br>
+<img src="scripts/variant2/outputs/sd_critic.png" > <br>
 <i>Spikes of the Critic</i>
 </div>
 
 <div style="text-align: center;">
-<img src="scripts/variant2/outputs/sd_DA.png" width="50%"> <br>
+<img src="scripts/variant2/outputs/sd_DA.png" > <br>
 <i>DA spikes (dopamine activator)</i>
 </div>
 
 <div style="text-align: center;">
-<img src="scripts/variant2/outputs/sd_states.png" width="50%"> <br>
+<img src="scripts/variant2/outputs/sd_states.png" > <br>
 <i>Spikes of the States</i>
 </div>
 
 <div style="text-align: center;">
-<img src="scripts/variant2/outputs/sd_wta.png" width="50%"> <br>
+<img src="scripts/variant2/outputs/sd_wta.png" > <br>
 <i>Winner-take-all spikes</i>
 </div>
 
